@@ -62,6 +62,28 @@ Item* get_item(HashTable* ht, char* key) {
 }
 
 void delete_item(HashTable* ht, char* key) {
+	Item *i = get_item(ht, key);
+	if (i == NULL)
+		return;
+	HashResult hash_result = hash(key);
+	Node *current, *prev, *temp;
+	current = ht->cells[hash_result];
+	if (!strcmp(current->item->key, key)) {
+		free(current);
+		current = NULL;
+		return;
+	}
+	while (current->next != NULL) {
+		temp = current;
+		current = current->next;
+		prev = temp;
+		if (!strcmp(current->item->key, key)) {
+			free(current);
+			current = NULL;
+			prev->next = NULL;
+			return;
+		}
+	}
 }
 
 int
@@ -72,7 +94,10 @@ main(int argc, char* argv[]) {
 	Item x = {key1, (void*)value1};
 
 	set_item(ht, &x);
-	Item* y = get_item(ht, "hello");
+	get_item(ht, "hello");
+	delete_item(ht, "hello");
+
+	free(ht);
 
 	return 0;
 }
