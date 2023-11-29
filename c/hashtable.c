@@ -2,18 +2,15 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define TABLE_SIZE 1024
+
+#define TABLE_SIZE 1
 
 typedef unsigned int HashResult;
 
-typedef struct _item {
-	char* key;
-	void* value;
-} Item;
-
 
 typedef struct _node {
-	Item* item;
+	char *key;
+	void *value;
 	struct _node* next;
 } Node;
 
@@ -33,10 +30,11 @@ HashResult hash(char* string) {
 	return result % TABLE_SIZE;
 }
 
-void set_item(HashTable* ht, Item* item) {
-	HashResult hash_result = hash(item->key);
+void set(HashTable* ht, char *key, void *value) {
+	HashResult hash_result = hash(key);
 	Node* node = (Node*)malloc(sizeof(Node));
-	node->item = item;
+	node->key = key;
+	node->value = value;
 	node->next = NULL;
 	if (ht->cells[hash_result] == NULL) {
 		ht->cells[hash_result] = node;
@@ -48,36 +46,41 @@ void set_item(HashTable* ht, Item* item) {
 	}
 }
 
-Item* get_item(HashTable* ht, char* key) {
+void* get(HashTable* ht, char* key) {
 	HashResult hash_result = hash(key);
 	if (ht->cells[hash_result] == NULL)
 		return NULL;
 	Node* node = ht->cells[hash_result];
-	while (node->next != NULL) {
-		if (!strcmp(key, node->item->key))
-			return node->item;
+	if (!strcmp(key, node->key))
+			return node->value;
+	do {
+		if (!strcmp(key, node->key))
+			return node->value;
 		node = node->next;
 	}
+	while (node != NULL);
+
 	return NULL;
 }
 
-void delete_item(HashTable* ht, char* key) {
-	Item *i = get_item(ht, key);
+void delete(HashTable* ht, char* key) {
+	void *i = get(ht, key);
 	if (i == NULL)
 		return;
 	HashResult hash_result = hash(key);
 	Node *current, *prev, *temp;
 	current = ht->cells[hash_result];
-	if (!strcmp(current->item->key, key)) {
+	if (!strcmp(current->key, key)) {
 		free(current);
 		current = NULL;
+		ht->cells[hash_result] = NULL;
 		return;
 	}
 	while (current->next != NULL) {
 		temp = current;
 		current = current->next;
 		prev = temp;
-		if (!strcmp(current->item->key, key)) {
+		if (!strcmp(current->key, key)) {
 			free(current);
 			current = NULL;
 			prev->next = NULL;
@@ -89,14 +92,33 @@ void delete_item(HashTable* ht, char* key) {
 int
 main(int argc, char* argv[]) {
 	HashTable* ht = new_hashtable();
-	char* key1 = "hello";
-	long int value1 = 32;
-	Item x = {key1, (void*)value1};
-
-	set_item(ht, &x);
-	get_item(ht, "hello");
-	delete_item(ht, "hello");
-
+	while (!feof(stdin)) {
+		fprintf(stdout, ">>> ");
+		char input[256];
+		fgets(input, 256, stdin);
+		char *command;
+		command = strtok(input, " ");
+		if (!strcmp(command, "SET")) {
+			char *sub = &input[(int)strlen(command) + 1];
+			char *key = strtok(sub, " ");
+			sub = &input[(int)strlen(command) + (int)strlen(key) + 2];
+			char *value = strtok(sub, "\n");
+			key = strncpy(malloc(strlen(key)), key, strlen(key));
+			value = strncpy(malloc(strlen(value)), value, strlen(value));
+			set(ht, key, (void*)value);
+		} else if (!strcmp(command, "GET")) {
+			char *sub = &input[(int)strlen(command) + 1];
+			char *key = strtok(sub, "\n");
+			char *value = get(ht, key);	
+			fprintf(stdout, "%s\n", (char*)value);
+		} else if (!strcmp(command, "DEL") || !strcmp(command, "DELETE")) {
+			char *sub = &input[(int)strlen(command) + 1];
+			char *key = strtok(sub, "\n");
+			delete(ht, key);
+		} else if (input[0] != '\n') {
+			puts("Invalid command!");
+		}
+	}
 	free(ht);
 
 	return 0;
