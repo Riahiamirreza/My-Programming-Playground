@@ -16,22 +16,29 @@ typedef struct _node {
 
  
 typedef struct _hashtable {
-	Node* cells[TABLE_SIZE];
+	Node **cells;
+	size_t size;
 } HashTable;
 
-HashTable* new_hashtable() {
-	return (HashTable*)calloc(1, sizeof(HashTable));
+
+HashTable* new_hashtable(size_t size) {
+	HashTable* ht = (HashTable*)calloc(1, sizeof(HashTable));
+	Node **cells = calloc(size, sizeof(Node));
+	ht->cells = cells;
+	ht->size = size;
+	return ht;
 }
+
 
 HashResult hash(char* string) {
 	HashResult result = 0;
 	while(*string != '\0')
 		result += *(string++);
-	return result % TABLE_SIZE;
+	return result;
 }
 
 void set(HashTable* ht, char *key, void *value) {
-	HashResult hash_result = hash(key);
+	HashResult hash_result = hash(key) % ht->size;
 	Node* node = (Node*)malloc(sizeof(Node));
 	node->key = key;
 	node->value = value;
@@ -47,7 +54,7 @@ void set(HashTable* ht, char *key, void *value) {
 }
 
 void* get(HashTable* ht, char* key) {
-	HashResult hash_result = hash(key);
+	HashResult hash_result = hash(key) % ht->size;
 	if (ht->cells[hash_result] == NULL)
 		return NULL;
 	Node* node = ht->cells[hash_result];
@@ -67,7 +74,7 @@ void delete(HashTable* ht, char* key) {
 	void *i = get(ht, key);
 	if (i == NULL)
 		return;
-	HashResult hash_result = hash(key);
+	HashResult hash_result = hash(key) % ht->size;
 	Node *current, *prev, *temp;
 	current = ht->cells[hash_result];
 	if (!strcmp(current->key, key)) {
@@ -89,9 +96,29 @@ void delete(HashTable* ht, char* key) {
 	}
 }
 
+void print_chain(Node *root) {
+	while (root != NULL) {
+		fprintf(stdout, "Node at %p ", root);
+		fprintf(stdout, "k: %s, v: %p ", root->key, root->value);
+		root = root->next;
+	}
+}
+
+void print_table(HashTable *ht) {
+	for (int i=0; i < ht->size; i++) {
+		fprintf(stdout, "%1d-------", i);
+		putc('\n', stdout);
+		if (ht->cells[i] == NULL)
+			fprintf(stdout, "empty cell");
+		else
+			print_chain(ht->cells[i]);
+		putc('\n', stdout);
+	}
+}
+
 int
 main(int argc, char* argv[]) {
-	HashTable* ht = new_hashtable();
+	HashTable* ht = new_hashtable(8);
 	while (!feof(stdin)) {
 		fprintf(stdout, ">>> ");
 		char input[256];
@@ -115,6 +142,8 @@ main(int argc, char* argv[]) {
 			char *sub = &input[(int)strlen(command) + 1];
 			char *key = strtok(sub, "\n");
 			delete(ht, key);
+		} else if (!strcmp(command, "SHOW") || !strcmp(command, "SHOW\n")) {
+			print_table(ht);
 		} else if (input[0] != '\n') {
 			puts("Invalid command!");
 		}
