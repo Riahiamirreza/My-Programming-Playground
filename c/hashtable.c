@@ -20,6 +20,17 @@ typedef struct _hashtable {
 	size_t size;
 } HashTable;
 
+Node* pop(HashTable *ht) {
+	for (int i=0; i<ht->size; i++) {
+		if (ht->cells[i] == NULL)
+			continue;
+		Node* result = ht->cells[i];
+		ht->cells[i] = ht->cells[i]->next;
+		return result;
+	}
+	return NULL;
+}
+
 
 HashTable* new_hashtable(size_t size) {
 	HashTable* ht = (HashTable*)calloc(1, sizeof(HashTable));
@@ -96,6 +107,14 @@ void delete(HashTable* ht, char* key) {
 	}
 }
 
+void print_node(Node *n) {
+	if (n != NULL) {
+		fprintf(stdout, "Node at %p, key: %s, value: %p\n", n, n->key, n->value);
+		return;
+	}
+	fprintf(stdout, "null\n");
+}
+
 void print_chain(Node *root) {
 	while (root != NULL) {
 		fprintf(stdout, "Node at %p ", root);
@@ -144,6 +163,9 @@ main(int argc, char* argv[]) {
 			delete(ht, key);
 		} else if (!strcmp(command, "SHOW") || !strcmp(command, "SHOW\n")) {
 			print_table(ht);
+		} else if (!strcmp(command, "POP") || !strcmp(command, "POP\n")) {
+			Node* n = pop(ht);
+			print_node(n);
 		} else if (input[0] != '\n') {
 			puts("Invalid command!");
 		}
