@@ -107,6 +107,15 @@ void delete(HashTable* ht, char* key) {
 	}
 }
 
+HashTable* resize_hashtable(HashTable* ht, size_t size) {
+	HashTable *new = new_hashtable(size);
+	Node *n;
+	while ((n = pop(ht)) != NULL) {
+		set(new, n->key, n->value);
+	}
+	return new;
+}
+
 void print_node(Node *n) {
 	if (n != NULL) {
 		fprintf(stdout, "Node at %p, key: %s, value: %p\n", n, n->key, n->value);
@@ -166,6 +175,11 @@ main(int argc, char* argv[]) {
 		} else if (!strcmp(command, "POP") || !strcmp(command, "POP\n")) {
 			Node* n = pop(ht);
 			print_node(n);
+		} else if (!strcmp(command, "RESIZE") || !strcmp(command, "RESIZE\n")) {
+			char *sub = &input[(int)strlen(command) + 1];
+			char *size_str = strtok(sub, " ");
+			size_t size = atoi(size_str);
+			ht = resize_hashtable(ht, size);
 		} else if (input[0] != '\n') {
 			puts("Invalid command!");
 		}
