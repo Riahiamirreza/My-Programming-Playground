@@ -3,7 +3,6 @@
 #include <string.h>
 
 
-#define TABLE_SIZE 1
 
 typedef unsigned int HashResult;
 
